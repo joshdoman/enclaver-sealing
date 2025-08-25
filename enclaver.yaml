@@ -1,0 +1,15 @@
+version: v1
+name: "keyed-enclave"
+target: "enclave:latest"
+sources:
+  app: "app:latest"
+defaults:
+  memory_mb: 4096
+kms_proxy:
+  listen_port: 9999
+egress:
+  allow:
+    - kms.*.amazonaws.com
+    - 169.254.169.254
+ingress:
+  - listen_port: 8001

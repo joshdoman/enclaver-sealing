@@ -1,0 +1,20 @@
+[package]
+name = "enclave-server"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = { version = "0.7", features = ["macros"] }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+aws-config = { version = "1.1" }
+aws-sdk-kms = { version = "1.15" }
+base64 = "0.22"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+anyhow = "1.0"
+http = "1.1.0"
+p256 = { version = "0.13", features = ["pkcs8"] }
+secp256k1 = "0.28"
+sha2 = "0.10"

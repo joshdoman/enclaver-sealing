@@ -1,0 +1,17 @@
+{
+    "Sid": "Allow public use of the key for demo (git SHORT_SHA)",
+    "Effect": "Allow",
+    "Principal": {
+        "AWS": "*"
+    },
+    "Action": [
+        "kms:DeriveSharedSecret",
+        "kms:DescribeKey"
+    ],
+    "Resource": "*",
+    "Condition": {
+        "StringEqualsIgnoreCase": {
+            "kms:RecipientAttestation:PCR0": "INSERT_PCR_VALUE"
+        }
+    }
+}
