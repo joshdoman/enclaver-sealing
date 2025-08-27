@@ -226,7 +226,7 @@ async fn main() -> Result<()> {
         .with_state(app_state);
 
     let port = env::var("PORT")
-        .unwrap_or_else(|_| "8001".to_string())
+        .unwrap_or_else(|_| "8000".to_string())
         .parse::<u16>()?;
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
 

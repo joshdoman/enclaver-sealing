@@ -40,5 +40,5 @@ COPY --from=builder /usr/src/app/target/release/sealed-enclave /usr/local/bin/se
 ENV RUST_LOG=info
 ENV RUST_BACKTRACE=1
 
-EXPOSE 8001
+EXPOSE 8000
 ENTRYPOINT ["/usr/local/bin/sealed-enclave"]
