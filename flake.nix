@@ -54,7 +54,7 @@
 
                 # Create the entrypoint binary expected by enclaver
                 postInstall = ''
-                  ln -s $out/bin/sealed-enclave $out/bin/entrypoint
+                  cp -L $out/bin/sealed-enclave $out/bin/entrypoint
                 '';
               };
 
