@@ -34,11 +34,11 @@ RUN if [ "$LOCAL" = "true" ]; then \
     fi
 
 # Copy the compiled binary from the builder stage
-COPY --from=builder /usr/src/app/target/release/enclave-server /usr/local/bin/enclave-server
+COPY --from=builder /usr/src/app/target/release/sealed-enclave /usr/local/bin/sealed-enclave
 
 # Set environment variables
 ENV RUST_LOG=info
 ENV RUST_BACKTRACE=1
 
 EXPOSE 8001
-ENTRYPOINT ["/usr/local/bin/enclave-server"]
+ENTRYPOINT ["/usr/local/bin/sealed-enclave"]

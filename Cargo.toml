@@ -1,5 +1,5 @@
 [package]
-name = "enclave-server"
+name = "sealed-enclave"
 version = "0.1.0"
 edition = "2021"
 
