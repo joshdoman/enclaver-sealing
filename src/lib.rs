@@ -8,12 +8,16 @@ use std::{env, net::SocketAddr, sync::Arc};
 use tokio::sync::OnceCell;
 
 pub mod api;
+pub mod settings;
 
 use api::{
-    generate_secret_handler, health_handler, retrieve_public_key_handler, verify_and_sign_handler,
+    generate_secret_handler, get_settings_handler, health_handler, retrieve_public_key_handler,
+    update_settings_handler, verify_and_sign_handler,
 };
+use settings::Settings;
 
 pub struct AppState {
+    pub settings: Arc<OnceCell<Settings>>,
     pub ephemeral_key_pair: Arc<OnceCell<(SecretKey, Vec<u8>)>>,
 }
 
@@ -23,6 +27,7 @@ pub async fn run() -> Result<()> {
         .init();
 
     let app_state = Arc::new(AppState {
+        settings: Arc::new(OnceCell::new()),
         ephemeral_key_pair: Arc::new(OnceCell::new()),
     });
 
@@ -30,7 +35,11 @@ pub async fn run() -> Result<()> {
     let app = Router::new()
         .route("/generate-secret", post(generate_secret_handler))
         .route("/public-key", get(retrieve_public_key_handler))
-        .route("/verify-and-sign", post(verify_and_sign_handler)) // Changed to POST
+        .route("/verify-and-sign", post(verify_and_sign_handler))
+        .route(
+            "/settings",
+            get(get_settings_handler).put(update_settings_handler),
+        )
         .route("/health", get(health_handler))
         .with_state(app_state);
 

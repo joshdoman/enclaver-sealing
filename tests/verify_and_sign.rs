@@ -30,7 +30,10 @@ fn setup_app_state(with_key: bool) -> Arc<AppState> {
             .unwrap();
     }
 
-    Arc::new(AppState { ephemeral_key_pair })
+    Arc::new(AppState {
+        settings: Arc::new(OnceCell::new()),
+        ephemeral_key_pair,
+    })
 }
 
 async fn spawn_app(app_state: Arc<AppState>) -> SocketAddr {

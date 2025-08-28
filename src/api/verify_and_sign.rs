@@ -106,6 +106,7 @@ pub async fn verify_and_sign_handler(
     }
 
     // Call verify_and_sign
+    // TODO: Ensure transaction does not exceed `max_weight`
     let signed_tx = match verify_and_sign(
         &DefaultVerifier,
         payload.input_index,

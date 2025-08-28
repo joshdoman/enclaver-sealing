@@ -121,11 +121,7 @@ pub async fn generate_secret_handler(
         .set((secp256k1_secret_key, serialized_public_key))
         .is_err()
     {
-        return (
-            StatusCode::CONFLICT,
-            "Secret has already been generated (race condition).",
-        )
-            .into_response();
+        return (StatusCode::CONFLICT, "Secret has already been generated.").into_response();
     }
 
     tracing::info!("Successfully generated and stored ephemeral secp256k1 key pair.");
