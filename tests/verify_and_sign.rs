@@ -1,13 +1,11 @@
 use axum::{routing::post, Router};
 use bitcoin::{
     consensus::{deserialize, encode::serialize},
-    hashes::Hash,
     key::UntweakedPublicKey,
     opcodes,
-    script::Builder,
     secp256k1::{Secp256k1, SecretKey},
     taproot::{LeafVersion, TaprootBuilder},
-    Address, Amount, Network, OutPoint, Script, ScriptBuf, Transaction, TxIn, TxOut, Txid, Witness,
+    Amount, Network, OutPoint, Script, ScriptBuf, Transaction, TxIn, TxOut, Witness,
 };
 use confidential_script::{
     api::{
@@ -16,7 +14,6 @@ use confidential_script::{
     AppState,
 };
 use confidential_script_lib;
-use serde::Deserialize;
 use std::{net::SocketAddr, sync::Arc};
 use tokio::{net::TcpListener, sync::OnceCell};
 
@@ -68,33 +65,8 @@ fn create_test_transaction_single_input() -> Transaction {
     }
 }
 
-fn create_test_transaction_multi_input() -> Transaction {
-    Transaction {
-        version: bitcoin::transaction::Version::TWO,
-        lock_time: bitcoin::locktime::absolute::LockTime::ZERO,
-        input: vec![
-            TxIn {
-                previous_output: OutPoint::null(),
-                script_sig: ScriptBuf::new(),
-                sequence: bitcoin::Sequence::ENABLE_RBF_NO_LOCKTIME,
-                witness: Witness::new(),
-            },
-            TxIn {
-                previous_output: OutPoint::new(Txid::all_zeros(), 1),
-                script_sig: ScriptBuf::new(),
-                sequence: bitcoin::Sequence::ENABLE_RBF_NO_LOCKTIME,
-                witness: Witness::new(),
-            },
-        ],
-        output: vec![TxOut {
-            value: Amount::from_sat(100000),
-            script_pubkey: ScriptBuf::new_op_return(&[]),
-        }],
-    }
-}
-
 #[tokio::test]
-async fn no_secret() {
+async fn verify_and_sign_no_secret() {
     let state = setup_app_state(false);
     let addr = spawn_app(state).await;
 
@@ -121,7 +93,7 @@ async fn no_secret() {
 }
 
 #[tokio::test]
-async fn invalid_tx_encoding() {
+async fn verify_and_sign_invalid_tx_encoding() {
     let state = setup_app_state(true);
     let addr = spawn_app(state).await;
 
@@ -145,7 +117,7 @@ async fn invalid_tx_encoding() {
 }
 
 #[tokio::test]
-async fn invalid_backup_merkle_root() {
+async fn verify_and_sign_invalid_backup_merkle_root() {
     let state = setup_app_state(true);
     let addr = spawn_app(state).await;
 
@@ -172,7 +144,7 @@ async fn invalid_backup_merkle_root() {
 }
 
 #[tokio::test]
-async fn invalid_backup_merkle_root_len() {
+async fn verify_and_sign_invalid_backup_merkle_root_len() {
     let state = setup_app_state(true);
     let addr = spawn_app(state).await;
 
@@ -199,7 +171,7 @@ async fn invalid_backup_merkle_root_len() {
 }
 
 #[tokio::test]
-async fn invalid_spent_output() {
+async fn verify_and_sign_invalid_spent_output() {
     let state = setup_app_state(true);
     let addr = spawn_app(state).await;
 
@@ -226,7 +198,7 @@ async fn invalid_spent_output() {
 }
 
 #[tokio::test]
-async fn deserialization_failed() {
+async fn verify_and_sign_tx_deserialization_failed() {
     let state = setup_app_state(true);
     let addr = spawn_app(state).await;
     let request_payload = VerifyAndSignRequest {
@@ -248,7 +220,7 @@ async fn deserialization_failed() {
 }
 
 #[tokio::test]
-async fn input_index_out_of_bounds() {
+async fn verify_and_sign_input_index_out_of_bounds() {
     let state = setup_app_state(true);
     let addr = spawn_app(state).await;
     let tx = create_test_transaction_single_input();
@@ -277,7 +249,7 @@ async fn input_index_out_of_bounds() {
 }
 
 #[tokio::test]
-async fn not_script_path_spend() {
+async fn verify_and_sign_not_script_path_spend() {
     let state = setup_app_state(true);
     let addr = spawn_app(state).await;
     let tx = create_test_transaction_single_input();
