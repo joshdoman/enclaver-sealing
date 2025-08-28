@@ -8,7 +8,6 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use p256::{pkcs8::EncodePublicKey, PublicKey as P256PublicKey};
 use secp256k1::{PublicKey as Secp256k1PublicKey, Secp256k1, SecretKey as Secp256k1SecretKey};
 use serde::{Deserialize, Serialize};
@@ -29,17 +28,23 @@ fn increment_be_bytes(bytes: &mut [u8]) {
 
 /// Generates a P-256 (NIST) public key where the private key is provably unknown.
 /// This key is used for the `DeriveSharedSecret` operation with AWS KMS.
-fn generate_p256_nums_key() -> P256PublicKey {
+///
+/// We include a Bitcoin blockhash in the derivation to ensure that the NUMS key
+/// was unknown when the current policy of the KMS key was set. This provides
+/// assurance that `DeriveSharedSecret` was not called outside the enclave.
+fn generate_p256_nums_key(blockhash: &[u8; 32]) -> P256PublicKey {
     let seed = b"This is a P-256 NUMS key for KMS";
     let mut counter: u32 = 0;
     tracing::info!(
-        "Generating P-256 NUMS public key based on seed: '{}'",
-        String::from_utf8_lossy(seed)
+        "Generating P-256 NUMS public key based on seed: '{}' and blockhash: {}",
+        String::from_utf8_lossy(seed),
+        hex::encode(blockhash)
     );
 
     loop {
         let mut hasher = Sha256::new();
         hasher.update(seed);
+        hasher.update(blockhash);
         hasher.update(&counter.to_be_bytes());
         let hash_result = hasher.finalize();
 
@@ -80,12 +85,12 @@ fn generate_p256_nums_key() -> P256PublicKey {
 #[derive(Debug, Deserialize)]
 struct GenerateSecretRequest {
     key_id: String,
+    blockhash: String,
 }
 
 #[derive(Debug, Serialize)]
 struct RetrievePublicKeyResponse {
-    #[serde(rename = "public-key-base64")]
-    public_key_base64: String,
+    public_key: String,
 }
 
 /// Handler to generate a shared secret and store it as a secp256k1 key pair.
@@ -97,13 +102,46 @@ async fn generate_secret_handler(
         return (StatusCode::CONFLICT, "Secret has already been generated.").into_response();
     }
 
+    // Decode and validate the blockhash
+    let blockhash_bytes = match hex::decode(&payload.blockhash) {
+        Ok(bytes) => bytes,
+        Err(e) => {
+            tracing::error!("Failed to decode blockhash: {}", e);
+            return (StatusCode::BAD_REQUEST, "Invalid blockhash encoding.").into_response();
+        }
+    };
+
+    if blockhash_bytes.len() != 32 {
+        return (
+            StatusCode::BAD_REQUEST,
+            "Blockhash must be exactly 32 bytes.",
+        )
+            .into_response();
+    }
+
+    let blockhash: [u8; 32] = blockhash_bytes.try_into().unwrap();
+
+    // Generate the P-256 NUMS key with the provided blockhash
+    let p256_nums_key = generate_p256_nums_key(&blockhash);
+    let p256_key_der_bytes = match p256_nums_key.to_public_key_der() {
+        Ok(der) => der.as_bytes().to_vec(),
+        Err(e) => {
+            tracing::error!("Failed to serialize P-256 key to DER: {}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Key serialization failed.",
+            )
+                .into_response();
+        }
+    };
+
     // Use the P-256 NUMS key to derive a secret from KMS.
     let shared_secret_output = match state
         .kms_client
         .derive_shared_secret()
         .key_id(&payload.key_id)
         .key_agreement_algorithm(KeyAgreementAlgorithmSpec::Ecdh)
-        .public_key(Blob::new(state.p256_nums_public_key_der.clone()))
+        .public_key(Blob::new(p256_key_der_bytes))
         .send()
         .await
     {
@@ -163,7 +201,7 @@ async fn retrieve_public_key_handler(State(state): State<Arc<AppState>>) -> impl
     match state.ephemeral_key_pair.get() {
         Some((_, serialized_public_key)) => {
             let response = RetrievePublicKeyResponse {
-                public_key_base64: BASE64.encode(serialized_public_key),
+                public_key: hex::encode(serialized_public_key),
             };
             (StatusCode::OK, AxumJson(response)).into_response()
         }
@@ -181,7 +219,6 @@ async fn health_handler() -> impl IntoResponse {
 
 struct AppState {
     kms_client: KmsClient,
-    p256_nums_public_key_der: Vec<u8>,
     ephemeral_key_pair: Arc<OnceCell<(Secp256k1SecretKey, Vec<u8>)>>,
 }
 
@@ -190,13 +227,6 @@ async fn main() -> Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .init();
-
-    let p256_nums_key = generate_p256_nums_key();
-    let p256_key_der_bytes = p256_nums_key.to_public_key_der()?.as_bytes().to_vec();
-    tracing::info!(
-        "Using P-256 NUMS public key (DER, base64): {}",
-        BASE64.encode(&p256_key_der_bytes)
-    );
 
     let aws_config = aws_config::load_defaults(BehaviorVersion::latest()).await;
 
@@ -215,7 +245,6 @@ async fn main() -> Result<()> {
 
     let app_state = Arc::new(AppState {
         kms_client,
-        p256_nums_public_key_der: p256_key_der_bytes,
         ephemeral_key_pair: Arc::new(OnceCell::new()),
     });
 
@@ -242,12 +271,22 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_p256_nums_key_matches_expected_value() {
-        let key = generate_p256_nums_key();
-        let der_key_bytes = key.to_public_key_der().unwrap().as_bytes().to_vec();
-        let key_base64 = BASE64.encode(&der_key_bytes);
-        let expected_key_base64 = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEZX29xKa9bh0ej4xggPwcjPtpEU0lwA5+Lijize+eC8W+9Y9TuKhCNMSn1whd7yuzYZ16CG16UeEksyAmpyB6DA==";
+    fn test_p256_nums_key() {
+        let blockhash = [0u8; 32];
+        let blockhash2 = [1u8; 32];
 
-        assert_eq!(key_base64, expected_key_base64);
+        let key = generate_p256_nums_key(&blockhash);
+        let key2 = generate_p256_nums_key(&blockhash2);
+        let key3 = generate_p256_nums_key(&blockhash);
+
+        assert_ne!(
+            key, key2,
+            "Different blockhashes should produce different keys"
+        );
+
+        assert_eq!(
+            key, key3,
+            "Same blockhash should produce same key"
+        );
     }
 }
