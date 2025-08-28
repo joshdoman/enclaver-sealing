@@ -44,14 +44,14 @@ This project is designed as a minimal, secure core. It provides a deterministic,
 3.  **Configure** an AWS KMS key with a policy that allows your enclave's `PCR0` hash to call `kms:DeriveSharedSecret`.
 4.  **Generate the Secret**:
     ```bash
-    curl -X POST http://localhost:8000/generate-secret \
+    curl -X POST http://localhost:8000/setup \
       -H "Content-Type: application/json" \
       -d '{
         "key_id": "arn:aws:kms:us-east-1:123456789012:key/your-kms-key-id"
         "blockhash": "0000000000000000000000000000000000000000000000000000000000000000"
       }'
     ```
-5.  **Retrieve the Public Key**:
+5.  **Get the Public Key**:
     ```bash
     curl http://localhost:8000/retrieve-public-key
     ```

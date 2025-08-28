@@ -7,25 +7,18 @@ use axum::{
 };
 use bitcoin::secp256k1::{PublicKey as Secp256k1PublicKey, Secp256k1, SecretKey};
 use p256::{pkcs8::EncodePublicKey, PublicKey as P256PublicKey};
-use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::sync::Arc;
 
-use crate::AppState;
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct GenerateSecretRequest {
-    pub key_id: String,
-    pub blockhash: String,
-}
+use crate::{settings::Settings, AppState};
 
 /// Handler to generate a shared secret and store it as a secp256k1 key pair.
-pub async fn generate_secret_handler(
+pub async fn setup_handler(
     State(state): State<Arc<AppState>>,
-    AxumJson(payload): AxumJson<GenerateSecretRequest>,
+    AxumJson(payload): AxumJson<Settings>,
 ) -> impl IntoResponse {
-    if state.ephemeral_key_pair.get().is_some() {
-        return (StatusCode::CONFLICT, "Secret has already been generated.").into_response();
+    if state.settings.get().is_some() {
+        return (StatusCode::CONFLICT, "Settings already set.").into_response();
     }
 
     // Create KMS client with credentials
@@ -122,6 +115,11 @@ pub async fn generate_secret_handler(
         .is_err()
     {
         return (StatusCode::CONFLICT, "Secret has already been generated.").into_response();
+    }
+
+    // Atomically store the settings.
+    if state.settings.set(payload).is_err() {
+        return (StatusCode::CONFLICT, "Settings have already been set.").into_response();
     }
 
     tracing::info!("Successfully generated and stored ephemeral secp256k1 key pair.");

@@ -11,8 +11,8 @@ pub mod api;
 pub mod settings;
 
 use api::{
-    generate_secret_handler, get_settings_handler, health_handler, retrieve_public_key_handler,
-    update_settings_handler, verify_and_sign_handler,
+    get_public_key_handler, get_settings_handler, health_handler, setup_handler,
+    verify_and_sign_handler,
 };
 use settings::Settings;
 
@@ -33,13 +33,10 @@ pub async fn run() -> Result<()> {
 
     // Remember to change verify_and_sign to a POST
     let app = Router::new()
-        .route("/generate-secret", post(generate_secret_handler))
-        .route("/public-key", get(retrieve_public_key_handler))
+        .route("/setup", post(setup_handler))
+        .route("/public-key", get(get_public_key_handler))
         .route("/verify-and-sign", post(verify_and_sign_handler))
-        .route(
-            "/settings",
-            get(get_settings_handler).put(update_settings_handler),
-        )
+        .route("/settings", get(get_settings_handler))
         .route("/health", get(health_handler))
         .with_state(app_state);
 

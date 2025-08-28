@@ -1,11 +1,11 @@
-mod generate_secret;
 mod health;
-mod retrieve_public_key;
+mod public_key;
 mod settings;
+mod setup;
 mod verify_and_sign;
 
-pub use generate_secret::*;
 pub use health::*;
-pub use retrieve_public_key::*;
+pub use public_key::*;
 pub use settings::*;
+pub use setup::*;
 pub use verify_and_sign::*;
