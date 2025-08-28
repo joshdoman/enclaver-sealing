@@ -93,9 +93,6 @@ mod tests {
         let key = generate_p256_nums_key(&blockhash);
         let key2 = generate_p256_nums_key(&blockhash);
 
-        assert_eq!(
-            key, key2,
-            "Same blockhash should produce same key"
-        );
+        assert_eq!(key, key2, "Same blockhash should produce same key");
     }
 }

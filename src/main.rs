@@ -2,18 +2,20 @@ use anyhow::Result;
 use aws_config::BehaviorVersion;
 use aws_sdk_kms::Client as KmsClient;
 use axum::Router;
-use secp256k1::SecretKey as Secp256k1SecretKey;
+use bitcoin::secp256k1::SecretKey;
 use std::{env, net::SocketAddr, sync::Arc};
 use tokio::sync::OnceCell;
 
 mod api;
 mod nums;
 
-use api::{generate_secret_handler, retrieve_public_key_handler, health_handler};
+use api::{
+    generate_secret_handler, health_handler, retrieve_public_key_handler, verify_and_sign_handler,
+};
 
 pub struct AppState {
     pub kms_client: KmsClient,
-    pub ephemeral_key_pair: Arc<OnceCell<(Secp256k1SecretKey, Vec<u8>)>>,
+    pub ephemeral_key_pair: Arc<OnceCell<(SecretKey, Vec<u8>)>>,
 }
 
 #[tokio::main]
@@ -43,8 +45,18 @@ async fn main() -> Result<()> {
     });
 
     let app = Router::new()
-        .route("/generate-secret", axum::routing::post(generate_secret_handler))
-        .route("/public-key", axum::routing::get(retrieve_public_key_handler))
+        .route(
+            "/generate-secret",
+            axum::routing::post(generate_secret_handler),
+        )
+        .route(
+            "/public-key",
+            axum::routing::get(retrieve_public_key_handler),
+        )
+        .route(
+            "/verify-and-sign",
+            axum::routing::get(verify_and_sign_handler),
+        )
         .route("/health", axum::routing::get(health_handler))
         .with_state(app_state);
 

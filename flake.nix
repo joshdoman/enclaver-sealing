@@ -42,7 +42,7 @@
                 cargoLock.lockFile = ./Cargo.lock;
                 doCheck = false;
 
-                # Build dependencies for libbitcoinkernel-sys-covenants
+                # Build dependencies for libbitcoinkernel-sys
                 nativeBuildInputs = with pkgsMusl.pkgsBuildHost; [
                   cmake
                   pkg-config
