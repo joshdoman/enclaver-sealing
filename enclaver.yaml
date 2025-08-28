@@ -1,5 +1,4 @@
 version: v1
-name: "sealed-enclave"
 defaults:
   memory_mb: 4096
 kms_proxy:
