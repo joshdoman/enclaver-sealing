@@ -41,9 +41,35 @@
                 src = ./.;
                 cargoLock.lockFile = ./Cargo.lock;
                 doCheck = false;
+
+                # Build dependencies for libbitcoinkernel-sys-covenants
+                nativeBuildInputs = with pkgsMusl.pkgsBuildHost; [
+                  cmake
+                  pkg-config
+                  git
+                  clang
+                  llvm
+                ];
+
+                buildInputs = with pkgsMusl; [
+                  boost
+                  libevent
+                  openssl
+                  sqlite
+                ];
+
+                # Environment variables
                 RUSTFLAGS = "-C target-feature=+crt-static";
                 RUST_LOG = "info";
                 RUST_BACKTRACE = "1";
+
+                # Bindgen environment variables
+                LIBCLANG_PATH = "${pkgsMusl.pkgsBuildHost.libclang.lib}/lib";
+                BINDGEN_EXTRA_CLANG_ARGS = pkgs.lib.concatStringsSep " " [
+                  "-I${pkgsMusl.pkgsBuildHost.clang}/resource-root/include"
+                  "-I${pkgsMusl.glibc.dev}/include"
+                ];
+
                 postInstall = ''
                   cp -L $out/bin/sealed-enclave $out/bin/entrypoint
                 '';
@@ -87,6 +113,14 @@
               cacert
               curl
               dnsutils
+              cmake
+              boost
+              libevent
+              zeromq
+              sqlite
+              git
+              clang
+              llvm
             ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
               darwin.apple_sdk.frameworks.Security
               darwin.apple_sdk.frameworks.SystemConfiguration
@@ -94,6 +128,11 @@
 
             RUST_LOG = "debug";
             RUST_BACKTRACE = "1";
+            LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
+            BINDGEN_EXTRA_CLANG_ARGS = pkgs.lib.concatStringsSep " " [
+              "-I${pkgs.pkgsBuildHost.clang}/resource-root/include"
+              "-I${pkgs.glibc.dev}/include"
+            ];
           };
 
           apps = {

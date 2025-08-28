@@ -18,3 +18,5 @@ p256 = { version = "0.13", features = ["pkcs8"] }
 secp256k1 = "0.28"
 sha2 = "0.10"
 hex = "0.4.3"
+confidential-script-lib = { version = "0.2.1" }
+bitcoinkernel-covenants = "0.0.22"
