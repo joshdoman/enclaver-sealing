@@ -35,8 +35,8 @@
                 };
               };
 
-              sealed-enclave = pkgsMusl.rustPlatform.buildRustPackage {
-                pname = "sealed-enclave";
+              confidential-script = pkgsMusl.rustPlatform.buildRustPackage {
+                pname = "confidential-script";
                 version = "0.1.0";
                 src = ./.;
                 cargoLock.lockFile = ./Cargo.lock;
@@ -71,14 +71,14 @@
                 ];
 
                 postInstall = ''
-                  cp -L $out/bin/sealed-enclave $out/bin/entrypoint
+                  cp -L $out/bin/confidential-script $out/bin/entrypoint
                 '';
               };
 
               makeAppEif = enclaver.lib.${system}.${arch}.makeAppEif or enclaver.lib.${system}.makeAppEif;
 
               eifBuild = makeAppEif {
-                appPackage = sealed-enclave;
+                appPackage = confidential-script;
                 configFile = ./enclaver.yaml;
               };
 
@@ -86,7 +86,7 @@
               inherit makeAppEif;
               eif = eifBuild.eif;
               rootfs = eifBuild.rootfs;
-              app = sealed-enclave;
+              app = confidential-script;
             };
 
           nativeArch = if pkgs.stdenv.isAarch64 then "aarch64" else "x86_64";
@@ -138,7 +138,7 @@
           apps = {
             default = flake-utils.lib.mkApp {
               drv = nativePackages.app;
-              name = "sealed-enclave";
+              name = "confidential-script";
             };
           };
         });

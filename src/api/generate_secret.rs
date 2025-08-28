@@ -1,4 +1,5 @@
-use aws_sdk_kms::{primitives::Blob, types::KeyAgreementAlgorithmSpec};
+use aws_config::BehaviorVersion;
+use aws_sdk_kms::{primitives::Blob, types::KeyAgreementAlgorithmSpec, Client as KmsClient};
 use axum::{
     extract::State,
     http::StatusCode,
@@ -6,13 +7,13 @@ use axum::{
 };
 use bitcoin::secp256k1::{PublicKey as Secp256k1PublicKey, Secp256k1, SecretKey};
 use p256::{pkcs8::EncodePublicKey, PublicKey as P256PublicKey};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::sync::Arc;
 
 use crate::AppState;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct GenerateSecretRequest {
     pub key_id: String,
     pub blockhash: String,
@@ -26,6 +27,17 @@ pub async fn generate_secret_handler(
     if state.ephemeral_key_pair.get().is_some() {
         return (StatusCode::CONFLICT, "Secret has already been generated.").into_response();
     }
+
+    // Create KMS client with credentials
+    let aws_config = aws_config::load_defaults(BehaviorVersion::latest()).await;
+    let mut kms_config_builder = aws_sdk_kms::config::Builder::from(&aws_config);
+    if let Ok(kms_endpoint) = crate::env::var("AWS_KMS_ENDPOINT") {
+        tracing::info!("KMS proxy configured at: {}", kms_endpoint);
+        kms_config_builder = kms_config_builder.endpoint_url(kms_endpoint);
+    } else {
+        tracing::info!("KMS proxy is NOT configured, using default endpoint.");
+    }
+    let kms_client = KmsClient::from_conf(kms_config_builder.build());
 
     // Decode and validate the blockhash
     let blockhash_bytes = match hex::decode(&payload.blockhash) {
@@ -61,8 +73,7 @@ pub async fn generate_secret_handler(
     };
 
     // Use the P-256 NUMS key to derive a secret from KMS.
-    let shared_secret_output = match state
-        .kms_client
+    let shared_secret_output = match kms_client
         .derive_shared_secret()
         .key_id(&payload.key_id)
         .key_agreement_algorithm(KeyAgreementAlgorithmSpec::Ecdh)

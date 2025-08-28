@@ -11,22 +11,21 @@ use std::sync::Arc;
 
 use crate::AppState;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct VerifyAndSignRequest {
     pub input_index: u32,
     pub emulated_tx_to: String,
     pub actual_spent_outputs: Vec<ActualSpentOutput>,
-    pub aux_rand: String,
     pub backup_merkle_root: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ActualSpentOutput {
     pub value: u64,
     pub script_pubkey: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct VerifyAndSignResponse {
     pub signed_transaction: String,
 }
@@ -41,7 +40,7 @@ pub async fn verify_and_sign_handler(
         Some(key_pair) => key_pair.clone(),
         None => {
             return (
-                StatusCode::NOT_FOUND,
+                StatusCode::BAD_REQUEST,
                 "Secret not found. Please generate it first.",
             )
                 .into_response();
@@ -52,31 +51,10 @@ pub async fn verify_and_sign_handler(
     let emulated_tx_bytes = match hex::decode(&payload.emulated_tx_to) {
         Ok(bytes) => bytes,
         Err(e) => {
-            tracing::error!("Failed to decode emulated transaction: {}", e);
-            return (
-                StatusCode::BAD_REQUEST,
-                "Invalid emulated transaction encoding.",
-            )
-                .into_response();
+            tracing::error!("Failed to decode transaction: {}", e);
+            return (StatusCode::BAD_REQUEST, "Invalid transaction encoding.").into_response();
         }
     };
-
-    // Decode aux_rand
-    let aux_rand_bytes = match hex::decode(&payload.aux_rand) {
-        Ok(bytes) => bytes,
-        Err(e) => {
-            tracing::error!("Failed to decode aux_rand: {}", e);
-            return (StatusCode::BAD_REQUEST, "Invalid aux_rand encoding.").into_response();
-        }
-    };
-
-    if aux_rand_bytes.len() != 32 {
-        return (
-            StatusCode::BAD_REQUEST,
-            "aux_rand must be exactly 32 bytes.",
-        )
-            .into_response();
-    }
 
     let mut aux_rand = [0u8; 32];
     rand::rng().fill_bytes(&mut aux_rand);
@@ -89,7 +67,7 @@ pub async fn verify_and_sign_handler(
                 tracing::error!("Failed to decode backup_merkle_root: {}", e);
                 return (
                     StatusCode::BAD_REQUEST,
-                    "Invalid backup_merkle_root encoding.",
+                    "Invalid backup merkle root encoding.",
                 )
                     .into_response();
             }
@@ -98,7 +76,7 @@ pub async fn verify_and_sign_handler(
         if root_bytes.len() != 32 {
             return (
                 StatusCode::BAD_REQUEST,
-                "backup_merkle_root must be exactly 32 bytes.",
+                "Backup merkle root must be exactly 32 bytes.",
             )
                 .into_response();
         }
@@ -116,8 +94,7 @@ pub async fn verify_and_sign_handler(
             Ok(bytes) => bytes,
             Err(e) => {
                 tracing::error!("Failed to decode script_pubkey: {}", e);
-                return (StatusCode::BAD_REQUEST, "Invalid script_pubkey encoding.")
-                    .into_response();
+                return (StatusCode::BAD_REQUEST, "Invalid scriptPubKey encoding.").into_response();
             }
         };
 

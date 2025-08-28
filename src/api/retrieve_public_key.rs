@@ -3,12 +3,12 @@ use axum::{
     http::StatusCode,
     response::{IntoResponse, Json as AxumJson},
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 use crate::AppState;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct RetrievePublicKeyResponse {
     pub public_key: String,
 }
