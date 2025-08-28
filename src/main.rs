@@ -7,7 +7,6 @@ use std::{env, net::SocketAddr, sync::Arc};
 use tokio::sync::OnceCell;
 
 mod api;
-mod nums;
 
 use api::{
     generate_secret_handler, health_handler, retrieve_public_key_handler, verify_and_sign_handler,
