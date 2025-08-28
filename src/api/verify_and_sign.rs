@@ -36,7 +36,7 @@ pub async fn verify_and_sign_handler(
     AxumJson(payload): AxumJson<VerifyAndSignRequest>,
 ) -> impl IntoResponse {
     // Check if ephemeral key pair exists
-    let (secret_key, _) = match state.ephemeral_key_pair.get() {
+    let (secret_key, _) = match state.master_key_pair.get() {
         Some(key_pair) => key_pair.clone(),
         None => {
             return (

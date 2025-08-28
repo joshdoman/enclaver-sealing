@@ -18,7 +18,7 @@ use settings::Settings;
 
 pub struct AppState {
     pub settings: Arc<OnceCell<Settings>>,
-    pub ephemeral_key_pair: Arc<OnceCell<(SecretKey, Vec<u8>)>>,
+    pub master_key_pair: Arc<OnceCell<(SecretKey, Vec<u8>)>>,
 }
 
 pub async fn run() -> Result<()> {
@@ -28,7 +28,7 @@ pub async fn run() -> Result<()> {
 
     let app_state = Arc::new(AppState {
         settings: Arc::new(OnceCell::new()),
-        ephemeral_key_pair: Arc::new(OnceCell::new()),
+        master_key_pair: Arc::new(OnceCell::new()),
     });
 
     // Remember to change verify_and_sign to a POST

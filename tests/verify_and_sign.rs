@@ -18,21 +18,21 @@ use std::{net::SocketAddr, sync::Arc};
 use tokio::{net::TcpListener, sync::OnceCell};
 
 fn setup_app_state(with_key: bool) -> Arc<AppState> {
-    let ephemeral_key_pair = Arc::new(OnceCell::new());
+    let master_key_pair = Arc::new(OnceCell::new());
 
     if with_key {
         let secp = Secp256k1::new();
         let secret_key = SecretKey::from_slice(&[1u8; 32]).unwrap();
         let public_key = secret_key.public_key(&secp);
         let serialized_public_key = public_key.serialize_uncompressed().to_vec();
-        ephemeral_key_pair
+        master_key_pair
             .set((secret_key, serialized_public_key))
             .unwrap();
     }
 
     Arc::new(AppState {
         settings: Arc::new(OnceCell::new()),
-        ephemeral_key_pair,
+        master_key_pair,
     })
 }
 

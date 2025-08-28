@@ -110,7 +110,7 @@ pub async fn setup_handler(
 
     // Atomically store the resulting secp256k1 key pair.
     if state
-        .ephemeral_key_pair
+        .master_key_pair
         .set((secp256k1_secret_key, serialized_public_key))
         .is_err()
     {
