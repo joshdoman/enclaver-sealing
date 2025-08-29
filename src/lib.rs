@@ -2,6 +2,7 @@ use anyhow::Result;
 use axum::{
     routing::{get, post},
     Router,
+    middleware,
 };
 use bitcoin::secp256k1::SecretKey;
 use std::{env, net::SocketAddr, sync::Arc};
@@ -12,7 +13,7 @@ pub mod settings;
 
 use api::{
     get_public_key_handler, get_settings_handler, health_handler, setup_handler,
-    verify_and_sign_handler,
+    verify_and_sign_handler, encryption_middleware,
 };
 use settings::Settings;
 
@@ -36,6 +37,13 @@ pub async fn run() -> Result<()> {
         .route("/setup", post(setup_handler))
         .route("/public-key", get(get_public_key_handler))
         .route("/verify-and-sign", post(verify_and_sign_handler))
+        .route(
+            "/secure/verify-and-sign",
+            post(verify_and_sign_handler).route_layer(middleware::from_fn_with_state(
+                app_state.clone(),
+                encryption_middleware,
+            )),
+        )
         .route("/settings", get(get_settings_handler))
         .route("/health", get(health_handler))
         .with_state(app_state);
