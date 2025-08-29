@@ -1,4 +1,4 @@
-mod encryption_middleware;
+pub mod encryption_middleware;
 mod health;
 mod public_key;
 mod settings;

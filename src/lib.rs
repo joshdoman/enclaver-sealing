@@ -1,8 +1,8 @@
 use anyhow::Result;
 use axum::{
+    middleware,
     routing::{get, post},
     Router,
-    middleware,
 };
 use bitcoin::secp256k1::SecretKey;
 use std::{env, net::SocketAddr, sync::Arc};
@@ -12,8 +12,8 @@ pub mod api;
 pub mod settings;
 
 use api::{
-    get_public_key_handler, get_settings_handler, health_handler, setup_handler,
-    verify_and_sign_handler, encryption_middleware,
+    encryption_middleware, get_public_key_handler, get_settings_handler, health_handler,
+    setup_handler, verify_and_sign_handler,
 };
 use settings::Settings;
 
