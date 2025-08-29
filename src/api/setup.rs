@@ -126,17 +126,6 @@ pub async fn setup_handler(
     (StatusCode::OK, "Secret generated successfully.").into_response()
 }
 
-/// Increments a 32-byte slice in place, treating it as a big-endian integer.
-pub fn increment_be_bytes(bytes: &mut [u8]) {
-    for byte in bytes.iter_mut().rev() {
-        let (res, overflow) = byte.overflowing_add(1);
-        *byte = res;
-        if !overflow {
-            return;
-        }
-    }
-}
-
 /// Generates a P-256 (NIST) public key where the private key is provably unknown.
 /// This key is used for the `DeriveSharedSecret` operation with AWS KMS.
 ///
@@ -190,6 +179,17 @@ pub fn generate_p256_nums_key(blockhash: &[u8; 32]) -> P256PublicKey {
         counter = counter
             .checked_add(1)
             .expect("P-256 NUMS key generation counter overflowed.");
+    }
+}
+
+/// Increments a 32-byte slice in place, treating it as a big-endian integer.
+pub fn increment_be_bytes(bytes: &mut [u8]) {
+    for byte in bytes.iter_mut().rev() {
+        let (res, overflow) = byte.overflowing_add(1);
+        *byte = res;
+        if !overflow {
+            return;
+        }
     }
 }
 
