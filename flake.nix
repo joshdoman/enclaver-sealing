@@ -38,7 +38,16 @@
               confidential-script = pkgsMusl.rustPlatform.buildRustPackage {
                 pname = "confidential-script";
                 version = "0.1.0";
-                src = ./.;
+
+                src = pkgs.lib.cleanSourceWith {
+                  src = ./.;
+                  filter = path: type:
+                    let relativePath = pkgs.lib.removePrefix (toString ./. + "/") (toString path);
+                    in !(pkgs.lib.hasPrefix "docs/" relativePath) &&
+                       !(pkgs.lib.hasPrefix ".github/" relativePath) &&
+                       !(relativePath == "README.md");
+                };
+  
                 cargoLock.lockFile = ./Cargo.lock;
                 doCheck = false;
 
