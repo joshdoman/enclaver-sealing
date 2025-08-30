@@ -66,11 +66,13 @@ pub async fn encryption_middleware(
             )
         })?
         .to_str()
-        .map_err(|e| MiddlewareError::new(
-            StatusCode::BAD_REQUEST,
-            format!("Invalid header encoding: {}", e)
-        ))?;
-    
+        .map_err(|e| {
+            MiddlewareError::new(
+                StatusCode::BAD_REQUEST,
+                format!("Invalid header encoding: {}", e),
+            )
+        })?;
+
     let client_public_key_bytes = hex::decode(client_public_key_header).map_err(|e| {
         MiddlewareError::new(
             StatusCode::BAD_REQUEST,
