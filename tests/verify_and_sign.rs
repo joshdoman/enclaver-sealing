@@ -189,7 +189,7 @@ async fn verify_and_sign_input_index_out_of_bounds() {
     let tx = create_test_transaction_single_input();
     let txout = ActualSpentOutput {
         value: 100000,
-        script_pubkey: hex::encode(ScriptBuf::new_op_return(&[])),
+        script_pubkey: hex::encode(ScriptBuf::new_op_return([])),
     };
     let request_payload = VerifyAndSignRequest {
         input_index: 1,
@@ -218,7 +218,7 @@ async fn verify_and_sign_not_script_path_spend() {
     let tx = create_test_transaction_single_input();
     let txout = ActualSpentOutput {
         value: 100000,
-        script_pubkey: hex::encode(ScriptBuf::new_op_return(&[])),
+        script_pubkey: hex::encode(ScriptBuf::new_op_return([])),
     };
     let request_payload = VerifyAndSignRequest {
         input_index: 0,

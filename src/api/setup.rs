@@ -145,7 +145,7 @@ pub fn generate_p256_nums_key(blockhash: &[u8; 32]) -> P256PublicKey {
         let mut hasher = Sha256::new();
         hasher.update(seed);
         hasher.update(blockhash);
-        hasher.update(&counter.to_be_bytes());
+        hasher.update(counter.to_be_bytes());
         let hash_result = hasher.finalize();
 
         // Attempt to decompress a point from the hash as an x-coordinate

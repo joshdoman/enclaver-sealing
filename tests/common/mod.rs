@@ -14,7 +14,6 @@ use confidential_script::{
     },
     AppState,
 };
-use confidential_script_lib;
 use std::{net::SocketAddr, sync::Arc};
 use tokio::{net::TcpListener, sync::OnceCell};
 
@@ -77,7 +76,7 @@ pub fn create_test_transaction_single_input() -> Transaction {
         }],
         output: vec![TxOut {
             value: Amount::from_sat(100000),
-            script_pubkey: ScriptBuf::new_op_return(&[]),
+            script_pubkey: ScriptBuf::new_op_return([]),
         }],
     }
 }
@@ -141,12 +140,9 @@ pub fn validate_single_input_single_leaf_response(
         script_pubkey: actual_address.script_pubkey(),
     };
 
-    let mut actual_outputs = Vec::new();
-    for txout in [txout] {
-        let amount = txout.value.to_signed().unwrap().to_sat();
-        let script = bitcoinkernel::ScriptPubkey::try_from(txout.script_pubkey.as_bytes()).unwrap();
-        actual_outputs.push(bitcoinkernel::TxOut::new(&script, amount));
-    }
+    let amount = txout.value.to_signed().unwrap().to_sat();
+    let script = bitcoinkernel::ScriptPubkey::try_from(txout.script_pubkey.as_bytes()).unwrap();
+    let actual_outputs = [bitcoinkernel::TxOut::new(&script, amount)];
 
     let verify_result = bitcoinkernel::verify(
         &bitcoinkernel::ScriptPubkey::try_from(actual_address.script_pubkey().as_bytes()).unwrap(),
