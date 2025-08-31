@@ -1,3 +1,5 @@
+UNDER CONSTRUCTION, DO NOT USE
+
 # Confidential Script TEE
 
 This projects implements a Trusted Execution Environment (TEE) around `confidential-script-lib`, with a secure, reproducible, and permissionlessly provisioned master private key.
